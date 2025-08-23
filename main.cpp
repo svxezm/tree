@@ -12,8 +12,14 @@ std::ostringstream iterate_entries(
   std::ostringstream oss;
 
   for (const auto& entry : entries) {
-    for (int i = 1; i <= indenting; i++) {
-      oss << "-";
+    if (indenting == 1) {
+      oss << "├── ";
+    } else {
+      oss << "|";
+      for (int i = 1; i < indenting; i++) {
+        oss << "    ";
+      }
+      oss << "└── ";
     }
 
     oss << entry.path().filename().string() << "\n";
@@ -28,7 +34,7 @@ std::ostringstream iterate_entries(
         dir_entries,
         directories,
         files,
-        indenting++
+        indenting + 1
       ).str();
     } else {
       files++;

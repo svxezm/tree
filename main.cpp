@@ -1,55 +1,54 @@
 #include <iostream>
+#include <vector>
 #include <filesystem>
 
 namespace fs = std::filesystem;
 
 std::ostringstream iterate_entries(
-  fs::directory_iterator entries,
+  fs::path path,
   unsigned int &directories,
   unsigned int &files,
-  int indenting
+  std::string prefix
 ) {
-  std::ostringstream oss;
+  std::ostringstream tree;
+  std::vector<fs::directory_entry> entries = {
+    fs::directory_iterator(path), {}
+  };
 
-  for (const auto& entry : entries) {
-    if (indenting == 1) {
-      oss << "├── ";
-    } else {
-      oss << "|";
-      for (int i = 1; i < indenting; i++) {
-        oss << "    ";
-      }
-      oss << "└── ";
-    }
+  for (int i = 0; i < entries.size(); i++) {
+    fs::directory_entry entry = entries[i];
+    bool is_last = (i == entries.size() - 1);
+    std::ostringstream line;
 
-    oss << entry.path().filename().string() << "\n";
+    line << prefix
+         << (is_last ? "└── " : "├── ")
+         << entry.path().filename().string()
+         << "\n";
+
+    tree << line.str();
 
     if (entry.is_directory()) {
       directories++;
-      fs::directory_iterator dir_entries(
-        entry.path().string(), fs::directory_options::none
-      );
-
-      oss << iterate_entries(
-        dir_entries,
+      tree << iterate_entries(
+        entry.path(),
         directories,
         files,
-        indenting + 1
+        prefix + (is_last ? "    " : "│   ")
       ).str();
     } else {
       files++;
     }
   }
 
-  return oss;
+  return tree;
 }
 
 int main(int argc, char *argv[]) {
-  fs::directory_iterator entries(".", fs::directory_options::none);
+  fs::path entry_point = fs::path(".");
   unsigned int directories = 1;
   unsigned int files = 0;
 
-  std::ostringstream tree = iterate_entries(entries, directories, files, 1);
+  std::ostringstream tree = iterate_entries(entry_point, directories, files, "");
   std::ostringstream counts;
 
   counts << directories << " directories";
